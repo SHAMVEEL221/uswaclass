@@ -21,7 +21,7 @@ export default function LoginPage() {
   try {
     // Direct Supabase query (NO API)
     const { data, error } = await supabase
-      .from("student")
+      .from("students")
       .select("*")
       .eq("username", username)
       .eq("password", password)

@@ -19,7 +19,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/student-login", {
+     const res = await fetch(`${window.location.origin}/api/student-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" }, // important
         body: JSON.stringify({ username, password }),

@@ -22,7 +22,7 @@ export default function AdminStudents() {
     // Check if admin is logged in
     const admin = localStorage.getItem("admin");
     if (!admin) {
-      router.push("/admin-login");
+      router.push("/login");
       return;
     }
     

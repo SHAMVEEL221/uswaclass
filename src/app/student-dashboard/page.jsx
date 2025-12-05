@@ -1,19 +1,53 @@
 "use client";
+
 import { supabase } from "@/lib/supabaseClient";
 import { useEffect, useState } from "react";
-import { LogOut, Upload, Home } from "lucide-react";
+import { LogOut, Upload, Home, Clock, CheckCircle, XCircle } from "lucide-react";
 
 export default function StudentDashboard() {
   const [student, setStudent] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState([false, false, false, false]);
   const [files, setFiles] = useState([null, null, null, null]);
+  const [selectedFiles, setSelectedFiles] = useState([null, null, null, null]);
+  const [resultStatus, setResultStatus] = useState("pending");
 
+  // Load student + fetch uploaded files + result
   useEffect(() => {
     const storedStudent = localStorage.getItem("student");
     if (!storedStudent) {
       window.location.href = "/login";
       return;
     }
-    setStudent(JSON.parse(storedStudent));
+
+    const stu = JSON.parse(storedStudent);
+    setStudent(stu);
+
+    async function loadFiles() {
+      const { data } = await supabase
+        .from("student_files")
+        .select("*")
+        .eq("username", stu.username)
+        .maybeSingle();
+
+      if (data) {
+        const loadedFiles = [
+          data.file1_url,
+          data.file2_url,
+          data.file3_url,
+          data.file4_url,
+        ];
+
+        setFiles(loadedFiles);
+        setUploadStatus(loadedFiles.map(f => Boolean(f)));
+        
+        // Set result status
+        if (data.result) {
+          setResultStatus(data.result);
+        }
+      }
+    }
+
+    loadFiles();
   }, []);
 
   const handleLogout = () => {
@@ -22,77 +56,115 @@ export default function StudentDashboard() {
   };
 
   const handleFileChange = (index, file) => {
-    const updatedFiles = [...files];
-    updatedFiles[index] = file;
-    setFiles(updatedFiles);
+    const updated = [...selectedFiles];
+    updated[index] = file;
+    setSelectedFiles(updated);
   };
 
   const handleUpload = async () => {
-  if (!files.some(Boolean)) {
-    alert("Please select at least one file");
-    return;
-  }
-
-  // 1️⃣ Check if student row exists — if not create it
-  const { data: existing } = await supabase
-    .from("student_files")
-    .select("*")
-    .eq("username", student.username)
-    .maybeSingle();
-
-  if (!existing) {
-    await supabase.from("student_files").insert({
-      username: student.username,
-      student_name: student.student_name,
-      file1_url: null,
-      file2_url: null,
-      file3_url: null,
-      file4_url: null,
-    });
-  }
-
-  // 2️⃣ Upload each file & update specific column
-  for (let i = 0; i < files.length; i++) {
-    if (!files[i]) continue;
-
-    const file = files[i];
-    const filePath = `student-uploads/${student.username}/file${i + 1}-${Date.now()}-${file.name}`;
-
-    // Upload file to bucket
-    const { error: uploadError } = await supabase.storage
-      .from("albayan")
-      .upload(filePath, file);
-
-    if (uploadError) {
-      console.log(uploadError);
-      alert(`Upload failed for file ${i + 1}`);
-      continue;
+    if (!selectedFiles.some(Boolean)) {
+      alert("Please select at least one file");
+      return;
     }
 
-    const publicUrl = supabase.storage
-      .from("albayan")
-      .getPublicUrl(filePath).data.publicUrl;
+    // Ensure row exists
+    const { data: existing } = await supabase
+      .from("student_files")
+      .select("*")
+      .eq("username", student.username)
+      .maybeSingle();
 
-    // Update only one column (file1_url, file2_url...)
+    if (!existing) {
+      await supabase.from("student_files").insert({
+        username: student.username,
+        student_name: student.student_name,
+        file1_url: null,
+        file2_url: null,
+        file3_url: null,
+        file4_url: null,
+        result: "pending"  // Default result status
+      });
+    }
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      if (!selectedFiles[i]) continue;
+
+      const file = selectedFiles[i];
+      const filePath = `student-uploads/${student.username}/file${i + 1}-${Date.now()}-${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("albayan")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.log(uploadError);
+        alert(`Upload failed for file ${i + 1}`);
+        continue;
+      }
+
+      const publicUrl = supabase.storage
+        .from("albayan")
+        .getPublicUrl(filePath).data.publicUrl;
+
+      await supabase
+        .from("student_files")
+        .update({
+          [`file${i + 1}_url`]: publicUrl,
+        })
+        .eq("username", student.username);
+
+      // Mark success (show green tick)
+      setUploadStatus(prev => {
+        const updated = [...prev];
+        updated[i] = true;
+        return updated;
+      });
+    }
+
+    // Reset result to pending when new files are uploaded
     await supabase
       .from("student_files")
-      .update({
-        [`file${i + 1}_url`]: publicUrl,
-      })
+      .update({ result: "pending" })
       .eq("username", student.username);
-  }
+    
+    setResultStatus("pending");
 
-  alert("All selected files uploaded successfully! 🎉");
-};
-
-
+    alert("Files uploaded successfully!");
+  };
 
   if (!student) return null;
+
+  // Function to render result status with appropriate styling
+  const renderResultStatus = () => {
+    switch (resultStatus) {
+      case "approved":
+        return (
+          <div className="flex items-center gap-2 text-green-400">
+            <CheckCircle size={20} />
+            <span className="font-semibold">Approved ✓</span>
+          </div>
+        );
+      case "rejected":
+        return (
+          <div className="flex items-center gap-2 text-red-400">
+            <XCircle size={20} />
+            <span className="font-semibold">Rejected ✗</span>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center gap-2 text-yellow-400">
+            <Clock size={20} />
+            <span className="font-semibold">Pending Review</span>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
 
-      {/* Navbar */}
+      {/* NAVBAR */}
       <nav className="bg-gray-800 p-4 flex justify-between items-center shadow-lg">
         <div className="flex items-center gap-2 font-bold text-lg">
           <Home size={22} />
@@ -107,10 +179,9 @@ export default function StudentDashboard() {
         </button>
       </nav>
 
-      {/* Page Content */}
       <div className="flex-1 p-6 space-y-6 max-w-3xl mx-auto">
 
-        {/* Student Info */}
+        {/* STUDENT DETAILS */}
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg text-center">
           <h2 className="text-3xl font-bold text-cyan-400">Student Details</h2>
           <p className="text-lg pt-3"><strong>Name:</strong> {student.student_name}</p>
@@ -118,7 +189,35 @@ export default function StudentDashboard() {
           <p className="text-lg"><strong>Username:</strong> {student.username}</p>
         </div>
 
-        {/* Upload Section */}
+        {/* RESULT STATUS */}
+        <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
+          <h3 className="text-2xl font-semibold mb-4 text-center">Submission Status</h3>
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="text-xl">
+              {renderResultStatus()}
+            </div>
+            
+            {resultStatus === "pending" && (
+              <div className="text-gray-400 text-center text-sm">
+                Your files are under review. The admin will update your status soon.
+              </div>
+            )}
+            
+            {resultStatus === "approved" && (
+              <div className="text-green-400 text-center text-sm">
+                Congratulations! Your submission has been approved.
+              </div>
+            )}
+            
+            {resultStatus === "rejected" && (
+              <div className="text-red-400 text-center text-sm">
+                Your submission has been rejected. Please contact your admin for details.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* UPLOAD SECTION */}
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg">
           <h3 className="text-2xl font-semibold mb-4">Upload Your Files</h3>
 
@@ -127,11 +226,21 @@ export default function StudentDashboard() {
               <label className="block text-sm text-gray-400 mb-2">
                 File {index + 1}
               </label>
-              <input
-                type="file"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2"
-                onChange={(e) => handleFileChange(index, e.target.files[0])}
-              />
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  className="w-full bg-gray-700 border border-gray-600 rounded-lg p-2"
+                  onChange={(e) => handleFileChange(index, e.target.files[0])}
+                />
+
+                {/* GREEN CHECKMARK */}
+                {uploadStatus[index] ? (
+                  <span className="text-green-500 text-xl">✔️</span>
+                ) : (
+                  <span className="text-gray-500 text-xl">⏳</span>
+                )}
+              </div>
             </div>
           ))}
 

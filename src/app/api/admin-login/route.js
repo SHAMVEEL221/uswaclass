@@ -1,24 +1,21 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+
+// Hardcoded credentials
+const ADMIN_USERNAME = "admin";
+const ADMIN_PASSWORD = "uswa@25";
 
 export async function POST(req) {
   try {
     const { username, password } = await req.json();
 
-    const { data, error } = await supabase
-      .from("admin")
-      .select("*")
-      .eq("username", username)
-      .single();
-
-    if (error || !data) {
+    if (username !== ADMIN_USERNAME) {
       return NextResponse.json(
         { success: false, message: "Invalid username ⚠️" },
         { status: 401 }
       );
     }
 
-    if (data.password !== password) {
+    if (password !== ADMIN_PASSWORD) {
       return NextResponse.json(
         { success: false, message: "Wrong password ❌" },
         { status: 401 }
@@ -29,8 +26,8 @@ export async function POST(req) {
       success: true,
       message: "Admin login success ✅",
     });
-
   } catch (err) {
+    console.error(err);
     return NextResponse.json(
       { success: false, message: "Server error ❌" },
       { status: 500 }

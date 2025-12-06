@@ -68,7 +68,7 @@ export default function StudentDashboard() {
     0: ["ai"],            // File 1 → Illustrator
     1: ["doc", "docx"],   // File 2 → Word
     2: ["ai"],            // File 3 → Illustrator
-    3: ["html", "css", "js"], // File 4 → Only index/html/css/js
+    3: ["html", "css", "js","zip"], // File 4 → Only index/html/css/js
   };
 
   const ext = file.name.split(".").pop().toLowerCase();
@@ -382,7 +382,7 @@ File ${index + 1} accepts only: ${allowed[index].join(", ")}`);
     index === 0 ? ".ai" :
     index === 1 ? ".doc,.docx" :
     index === 2 ? ".ai" :
-    index === 3 ? ".html,.css,.js" :
+    index === 3 ? ".html,.css,.js,.zip" :
     "*/*"
   }
   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"

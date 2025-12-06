@@ -6,6 +6,8 @@ import { LogIn, User, Lock, Eye, EyeOff, Sparkles, Shield } from "lucide-react";
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+const [alertType, setAlertType] = useState("success"); // "success" | "error"
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -32,18 +34,27 @@ export default function LoginPage() {
         .single();
 
       if (error || !data) {
-        alert("Invalid username or password");
+       setAlertType("error");
+setAlertMessage("Invalid username or password");
+setTimeout(() => setAlertMessage(""), 3000);
+
         setLoading(false);
         return;
       }
 
       localStorage.setItem("student", JSON.stringify(data));
-      alert("Login successful");
+     setAlertType("success");
+setAlertMessage("Login successful");
+setTimeout(() => setAlertMessage(""), 3000);
+
       window.location.href = "/student-dashboard";
 
     } catch (err) {
       console.error(err);
-      alert("Unexpected error occurred");
+     setAlertType("error");
+setAlertMessage("Unexpected error occurred");
+setTimeout(() => setAlertMessage(""), 3000);
+
     }
 
     setLoading(false);
@@ -51,6 +62,22 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Custom Alert */}
+{alertMessage && (
+  <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] animate-fade-in">
+    <div
+      className={`px-6 py-3 rounded-xl shadow-xl backdrop-blur-md border transition-all duration-300
+      ${alertType === "success"
+        ? "bg-green-600/20 border-green-400 text-green-300"
+        : "bg-red-600/20 border-red-400 text-red-300"
+      }`}
+    >
+      <p className="font-semibold">{alertMessage}</p>
+    </div>
+  </div>
+)}
+
+
       {/* Admin Login Button - Top Right */}
       <button
         onClick={handleAdminLogin}

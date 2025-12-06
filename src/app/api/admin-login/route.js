@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 // Hardcoded credentials
 const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "uswa@25";
+const ADMIN_PASSWORD = "uswa25.";
 
 export async function POST(req) {
   try {

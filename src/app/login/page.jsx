@@ -1,7 +1,7 @@
 "use client";
 import { supabase } from "@/lib/supabaseClient";
 import { useState, useEffect } from "react";
-import { LogIn, User, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
+import { LogIn, User, Lock, Eye, EyeOff, Sparkles, Shield } from "lucide-react";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -9,10 +9,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // REMOVED: isMounted state - not needed for this fix
-
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
+  };
+
+  const handleAdminLogin = () => {
+    // Redirect to admin login page
+    window.location.href = "/admin-login";
+    // Or you can use: router.push("/admin-login") if using Next.js router
   };
 
   const handleSubmit = async (e) => {
@@ -47,6 +51,32 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Admin Login Button - Top Right */}
+      <button
+        onClick={handleAdminLogin}
+        className="absolute top-6 right-6 z-50 group"
+        aria-label="Admin Login"
+      >
+        <div className="relative">
+          {/* Glow effect on hover */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600/40 to-pink-600/40 rounded-full blur opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* Main button */}
+          <div className="relative bg-gray-900/90 backdrop-blur-sm border border-gray-700 hover:border-purple-500 rounded-full px-4 py-3 flex items-center gap-3 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 group-hover:scale-105">
+            <Shield 
+              size={20} 
+              className="text-purple-400 group-hover:text-purple-300 transition-colors duration-300" 
+            />
+            <span className="text-white font-medium text-sm hidden sm:inline">
+              Admin Login
+            </span>
+            <span className="text-white font-medium text-sm sm:hidden">
+              Admin
+            </span>
+          </div>
+        </div>
+      </button>
+
       {/* SIMPLIFIED Background - NO RANDOM ELEMENTS */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Static Gradient Orbs */}
@@ -87,7 +117,7 @@ export default function LoginPage() {
                 </div>
               </div>
               <h1 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                Welcome Back
+                Student Login
               </h1>
               <p className="text-gray-400 font-light">Enter your credentials to continue</p>
             </div>
@@ -165,11 +195,16 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-gray-800 text-center">
+            {/* Admin hint text (optional) */}
+            <div className="mt-8 text-center">
               <p className="text-gray-500 text-sm">
-                Secure login powered by{" "}
-                <span className="text-cyan-400 font-medium">Supabase</span>
+                Are you an administrator?{" "}
+                <button
+                  onClick={handleAdminLogin}
+                  className="text-purple-400 hover:text-purple-300 font-medium underline-offset-2 hover:underline transition-colors duration-300"
+                >
+                  Click here to login
+                </button>
               </p>
             </div>
           </div>

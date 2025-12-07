@@ -65,9 +65,9 @@ export default function StudentDashboard() {
   if (!file) return;
 
   const allowed = {
-    0: ["ai"],            // File 1 → Illustrator
+    0: ["ai","pdf"],            // File 1 → Illustrator
     1: ["doc", "docx"],   // File 2 → Word
-    2: ["ai"],            // File 3 → Illustrator
+    2: ["ai","pdf"],            // File 3 → Illustrator
     3: ["html", "css", "js","zip"], // File 4 → Only index/html/css/js
   };
 
@@ -379,9 +379,9 @@ File ${index + 1} accepts only: ${allowed[index].join(", ")}`);
                     <input
   type="file"
   accept={
-    index === 0 ? ".ai" :
+    index === 0 ? ".ai,.pdf" :
     index === 1 ? ".doc,.docx" :
-    index === 2 ? ".ai" :
+    index === 2 ? ".ai,.pdf" :
     index === 3 ? ".html,.css,.js,.zip" :
     "*/*"
   }
